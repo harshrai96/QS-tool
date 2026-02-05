@@ -1197,6 +1197,9 @@ def main():
     camera, converter = open_basler_latest_only()
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_NORMAL)
 
+    # Force fullscreen
+    cv2.setWindowProperty(WINDOW_NAME, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
     # NEW: enable clicking/tapping STOP
     cv2.setMouseCallback(WINDOW_NAME, _mouse_cb)
 
