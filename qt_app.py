@@ -1,106 +1,9 @@
-# from PySide6.QtWidgets import QApplication, QPushButton, QWidget, QVBoxLayout
-# import subprocess
-# import sys
 #
-# app = QApplication(sys.argv)
-#
-# window = QWidget()
-# window.setWindowTitle("Vision QC")
-# window.showFullScreen()
-#
-# layout = QVBoxLayout()
-#
-# btn = QPushButton("Live Predictions")
-# btn.setStyleSheet("font-size: 40px; height: 200px;")
-#
-# def start_live():
-#     subprocess.Popen(["python", "infer_4.py"])
-#
-# btn.clicked.connect(start_live)
-# layout.addWidget(btn)
-#
-# window.setLayout(layout)
-# window.show()
-#
-# sys.exit(app.exec())
-
-# works but without exit pin
-# import sys
-# import subprocess
-# from PySide6.QtWidgets import (
-#     QApplication,
-#     QWidget,
-#     QPushButton,
-#     QVBoxLayout,
-#     QLabel,
-#     QSpacerItem,
-#     QSizePolicy
-# )
-# from PySide6.QtCore import Qt
-#
-#
-# app = QApplication(sys.argv)
-#
-# # Main window
-# window = QWidget()
-# window.setWindowTitle("Opelka – Qualitätssicherungsmodul")
-# window.showFullScreen()
-#
-# # Main layout
-# layout = QVBoxLayout()
-# layout.setContentsMargins(60, 40, 60, 40)
-# layout.setSpacing(30)
-#
-# # ----- TITLE -----
-# title = QLabel("Opelka – Qualitätssicherungsmodul")
-# title.setAlignment(Qt.AlignCenter)
-# title.setStyleSheet("""
-#     QLabel {
-#         font-size: 36px;
-#         font-weight: bold;
-#     }
-# """)
-# layout.addWidget(title)
-#
-# # Spacer (push button to center area)
-# layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
-#
-# # ----- LIVE PREDICTIONS BUTTON -----
-# live_btn = QPushButton("Live-Prognosen")
-# live_btn.setFixedHeight(120)
-# live_btn.setStyleSheet("""
-#     QPushButton {
-#         font-size: 28px;
-#         border-radius: 12px;
-#         background-color: #2c7be5;
-#         color: white;
-#     }
-#     QPushButton:pressed {
-#         background-color: #1a5bb8;
-#     }
-# """)
-#
-# def start_live():
-#     subprocess.Popen(["python", "infer_4.py"])
-#
-# live_btn.clicked.connect(start_live)
-# layout.addWidget(live_btn, alignment=Qt.AlignCenter)
-#
-# # Spacer (bottom)
-# layout.addSpacerItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
-#
-# window.setLayout(layout)
-# window.show()
-#
-# sys.exit(app.exec())
-
-
-#works but has data labelling tab, could be of use later
 # import os
 # import sys
 # import subprocess
 #
-# from PySide6.QtCore import Qt
+# from PySide6.QtCore import Qt, QTimer
 # from PySide6.QtWidgets import (
 #     QApplication,
 #     QWidget,
@@ -113,7 +16,6 @@
 #     QLineEdit,
 #     QSizePolicy,
 # )
-#
 #
 # # =========================
 # # CONFIG
@@ -130,29 +32,29 @@
 #
 #         self.infer_process: subprocess.Popen | None = None
 #
-#         # ---------- Layouts ----------
+#         # ---------- Layout ----------
 #         root = QVBoxLayout()
 #         root.setContentsMargins(60, 40, 60, 40)
 #         root.setSpacing(25)
 #
+#         # Top row: title + developer button
 #         top_row = QHBoxLayout()
 #         top_row.setContentsMargins(0, 0, 0, 0)
 #
-#         # Title
 #         title = QLabel(APP_TITLE)
 #         title.setAlignment(Qt.AlignCenter)
 #         title.setStyleSheet("font-size: 36px; font-weight: 700;")
 #         title.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 #
-#         # Developer/Exit button (small + discreet)
-#         dev_btn = QPushButton("Developer")
-#         dev_btn.setFixedSize(140, 52)
+#         dev_btn = QPushButton("⚙  Entwickler-Modus")
+#         dev_btn.setFixedHeight(54)
 #         dev_btn.setStyleSheet("""
 #             QPushButton {
-#                 font-size: 16px;
+#                 font-size: 18px;
 #                 border-radius: 10px;
 #                 background: #444;
 #                 color: white;
+#                 padding: 6px 14px;
 #             }
 #             QPushButton:pressed { background: #333; }
 #         """)
@@ -160,14 +62,16 @@
 #
 #         top_row.addWidget(title, stretch=1)
 #         top_row.addWidget(dev_btn, alignment=Qt.AlignRight)
-#
 #         root.addLayout(top_row)
 #
-#         # ---------- Main buttons ----------
-#         btn_style_primary = """
+#         # ---------- Main START button ----------
+#         self.start_btn = QPushButton("START")
+#         self.start_btn.setFixedHeight(150)
+#         self.start_btn.setStyleSheet("""
 #             QPushButton {
-#                 font-size: 30px;
-#                 border-radius: 16px;
+#                 font-size: 44px;
+#                 font-weight: 700;
+#                 border-radius: 18px;
 #                 background-color: #2c7be5;
 #                 color: white;
 #                 padding: 18px;
@@ -175,81 +79,79 @@
 #             QPushButton:pressed {
 #                 background-color: #1a5bb8;
 #             }
-#         """
-#
-#         btn_style_secondary = """
-#             QPushButton {
-#                 font-size: 28px;
-#                 border-radius: 16px;
-#                 background-color: #666;
-#                 color: white;
-#                 padding: 18px;
+#             QPushButton:disabled {
+#                 background-color: #94bdf5;
+#                 color: #ffffff;
 #             }
-#             QPushButton:pressed {
-#                 background-color: #555;
-#             }
-#         """
+#         """)
+#         self.start_btn.clicked.connect(self.start_live_predictions)
 #
-#         self.live_btn = QPushButton("Live Predictions")
-#         self.live_btn.setFixedHeight(130)
-#         self.live_btn.setStyleSheet(btn_style_primary)
-#         self.live_btn.clicked.connect(self.start_live_predictions)
+#         # Helper text under button
+#         info = QLabel("Nach dem Drücken von START wird das System geladen.\nBitte warten Sie einige Sekunden.")
+#         info.setAlignment(Qt.AlignCenter)
+#         info.setStyleSheet("font-size: 16px; color: #777;")
 #
-#         self.label_btn = QPushButton("Data Labeling")
-#         self.label_btn.setFixedHeight(110)
-#         self.label_btn.setStyleSheet(btn_style_secondary)
-#         self.label_btn.clicked.connect(self.open_data_labeling_placeholder)
-#
-#         root.addStretch(1)
-#         root.addWidget(self.live_btn)
-#         root.addWidget(self.label_btn)
 #         root.addStretch(2)
+#         root.addWidget(self.start_btn)
+#         root.addWidget(info)
+#         root.addStretch(3)
 #
-#         # Hint line
-#         hint = QLabel("Tip: Use Developer button + PIN to exit to desktop")
+#         hint = QLabel("Tip: Entwickler-Modus → PIN → zurück zum Desktop")
 #         hint.setAlignment(Qt.AlignCenter)
 #         hint.setStyleSheet("font-size: 16px; color: #777;")
 #         root.addWidget(hint)
 #
 #         self.setLayout(root)
 #
-#     # =========================
-#     # Actions
-#     # =========================
+#         # ---------- Timer to reset UI when infer_4.py exits ----------
+#         self.proc_timer = QTimer(self)
+#         self.proc_timer.setInterval(500)  # ms
+#         self.proc_timer.timeout.connect(self._poll_infer_process)
+#         self.proc_timer.start()
+#
 #     def _script_dir(self) -> str:
 #         return os.path.dirname(os.path.abspath(__file__))
 #
+#     def _poll_infer_process(self):
+#         """If infer_4.py ended, reset the START button state."""
+#         if self.infer_process and self.infer_process.poll() is not None:
+#             self.infer_process = None
+#             self.start_btn.setText("START")
+#             self.start_btn.setEnabled(True)
+#
 #     def start_live_predictions(self):
-#         """Launch infer_4.py as a child process (touch button)."""
+#         """Launch infer_4.py as a child process."""
 #         if self.infer_process and self.infer_process.poll() is None:
-#             QMessageBox.information(self, "Already running", "Live Predictions is already running.")
+#             QMessageBox.information(self, "Läuft bereits", "Das System läuft bereits.")
 #             return
 #
 #         infer_path = os.path.join(self._script_dir(), "infer_4.py")
 #
 #         if not os.path.exists(infer_path):
-#             QMessageBox.critical(self, "Missing file", f"Cannot find infer_4.py at:\n{infer_path}")
+#             QMessageBox.critical(self, "Datei fehlt", f"infer_4.py nicht gefunden:\n{infer_path}")
 #             return
 #
-#         # Use the same Python interpreter running this Qt app (venv-safe)
+#         # --- UI feedback ---
+#         self.start_btn.setText("System startet … bitte warten")
+#         self.start_btn.setEnabled(False)
+#         QApplication.processEvents()  # force UI update
+#
 #         try:
 #             self.infer_process = subprocess.Popen([sys.executable, infer_path])
+#             # Once launched, show "running"
+#             self.start_btn.setText("Läuft …")
 #         except Exception as e:
-#             QMessageBox.critical(self, "Failed to start", f"Could not start inference:\n{e}")
-#
-#     def open_data_labeling_placeholder(self):
-#         QMessageBox.information(
-#             self,
-#             "Data Labeling",
-#             "Data Labeling screen will be implemented later.\n\n(For now, use Live Predictions.)"
-#         )
+#             QMessageBox.critical(self, "Start fehlgeschlagen", f"Inferenz konnte nicht gestartet werden:\n{e}")
+#             self.infer_process = None
+#             self.start_btn.setText("START")
+#             self.start_btn.setEnabled(True)
 #
 #     def ask_exit_pin(self):
-#         """Ask for PIN (touch-friendly) then exit to desktop if correct."""
+#         """Ask for PIN then exit to desktop if correct."""
 #         pin, ok = QInputDialog.getText(
 #             self,
-#             "Developer Access",
-#             "Enter PIN:",
+#             "Entwickler-Modus",
+#             "PIN eingeben:",
 #             QLineEdit.Password
 #         )
 #
@@ -257,10 +159,9 @@
 #             return
 #
 #         if pin != DEV_PIN:
-#             QMessageBox.warning(self, "Access Denied", "Wrong PIN")
+#             QMessageBox.warning(self, "Zugriff verweigert", "Falsche PIN")
 #             return
 #
-#         # Optional: stop inference before quitting launcher
 #         self.stop_inference_if_running()
 #         QApplication.quit()
 #
@@ -271,19 +172,18 @@
 #
 #         if self.infer_process.poll() is None:
 #             try:
-#                 # Try graceful termination
 #                 self.infer_process.terminate()
 #                 self.infer_process.wait(timeout=3)
 #             except Exception:
-#                 # Force kill if needed
 #                 try:
 #                     self.infer_process.kill()
 #                 except Exception:
 #                     pass
 #
 #         self.infer_process = None
+#         self.start_btn.setText("START")
+#         self.start_btn.setEnabled(True)
 #
-#     # Optional: if user closes the window (rare in kiosk), still stop inference
 #     def closeEvent(self, event):
 #         self.stop_inference_if_running()
 #         event.accept()
@@ -298,14 +198,17 @@
 #
 # if __name__ == "__main__":
 #     main()
-
+#
 
 
 import os
 import sys
+import json
+import uuid
+import tempfile
 import subprocess
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
@@ -333,6 +236,8 @@ class MainWindow(QWidget):
         self.showFullScreen()
 
         self.infer_process: subprocess.Popen | None = None
+        self.last_result_json: str = ""
+        self.result_popup_shown: bool = False
 
         # ---------- Layout ----------
         root = QVBoxLayout()
@@ -364,13 +269,12 @@ class MainWindow(QWidget):
 
         top_row.addWidget(title, stretch=1)
         top_row.addWidget(dev_btn, alignment=Qt.AlignRight)
-
         root.addLayout(top_row)
 
         # ---------- Main START button ----------
-        start_btn = QPushButton("START")
-        start_btn.setFixedHeight(150)
-        start_btn.setStyleSheet("""
+        self.start_btn = QPushButton("START")
+        self.start_btn.setFixedHeight(150)
+        self.start_btn.setStyleSheet("""
             QPushButton {
                 font-size: 44px;
                 font-weight: 700;
@@ -382,17 +286,21 @@ class MainWindow(QWidget):
             QPushButton:pressed {
                 background-color: #1a5bb8;
             }
+            QPushButton:disabled {
+                background-color: #94bdf5;
+                color: #ffffff;
+            }
         """)
-        start_btn.clicked.connect(self.start_live_predictions)
+        self.start_btn.clicked.connect(self.start_live_predictions)
+
+        info = QLabel("Nach dem Drücken von START wird das System geladen.\nBitte warten Sie einige Sekunden.")
+        info.setAlignment(Qt.AlignCenter)
+        info.setStyleSheet("font-size: 16px; color: #777;")
 
         root.addStretch(2)
-        root.addWidget(start_btn)
+        root.addWidget(self.start_btn)
+        root.addWidget(info)
         root.addStretch(3)
-
-        # (Data Labeling removed for now)
-        # label_btn = QPushButton("Data Labeling")
-        # label_btn.clicked.connect(self.open_data_labeling_placeholder)
-        # root.addWidget(label_btn)
 
         hint = QLabel("Tip: Entwickler-Modus → PIN → zurück zum Desktop")
         hint.setAlignment(Qt.AlignCenter)
@@ -401,54 +309,105 @@ class MainWindow(QWidget):
 
         self.setLayout(root)
 
-    # =========================
-    # Helpers
-    # =========================
+        # Poll child process so we can reset UI + show results popup after infer exits
+        self.proc_timer = QTimer(self)
+        self.proc_timer.setInterval(500)
+        self.proc_timer.timeout.connect(self._poll_infer_process)
+        self.proc_timer.start()
+
     def _script_dir(self) -> str:
         return os.path.dirname(os.path.abspath(__file__))
 
-    # =========================
-    # Actions
-    # =========================
+    def _poll_infer_process(self):
+        if self.infer_process and self.infer_process.poll() is not None:
+            # Process ended
+            self.infer_process = None
+
+            # Reset UI
+            self.start_btn.setText("START")
+            self.start_btn.setEnabled(True)
+
+            # Show results once (if available)
+            if not self.result_popup_shown:
+                self.result_popup_shown = True
+                self._show_results_popup()
+
     def start_live_predictions(self):
-        """Launch infer_4.py as a child process."""
         if self.infer_process and self.infer_process.poll() is None:
-            QMessageBox.information(self, "Läuft bereits", "Live Predictions läuft bereits.")
+            QMessageBox.information(self, "Läuft bereits", "Das System läuft bereits.")
             return
 
         infer_path = os.path.join(self._script_dir(), "infer_4.py")
-
         if not os.path.exists(infer_path):
             QMessageBox.critical(self, "Datei fehlt", f"infer_4.py nicht gefunden:\n{infer_path}")
             return
 
+        # Fresh result path each run (avoid stale file)
+        run_id = uuid.uuid4().hex[:10]
+        self.last_result_json = os.path.join(tempfile.gettempdir(), f"qc_result_{run_id}.json")
+        self.result_popup_shown = False
+
+        # UI feedback
+        self.start_btn.setText("System startet … bitte warten")
+        self.start_btn.setEnabled(False)
+        QApplication.processEvents()
+
         try:
-            # Use same interpreter as launcher (venv-safe)
-            self.infer_process = subprocess.Popen([sys.executable, infer_path])
+            # Pass JSON path to infer_4.py
+            self.infer_process = subprocess.Popen(
+                [sys.executable, infer_path, "--result-json", self.last_result_json]
+            )
+            self.start_btn.setText("Läuft …")
         except Exception as e:
             QMessageBox.critical(self, "Start fehlgeschlagen", f"Inferenz konnte nicht gestartet werden:\n{e}")
+            self.infer_process = None
+            self.start_btn.setText("START")
+            self.start_btn.setEnabled(True)
+
+    def _show_results_popup(self):
+        # If infer didn't write a result file, don't block user
+        if not self.last_result_json or not os.path.exists(self.last_result_json):
+            QMessageBox.information(self, "Zählung", "Keine Ergebnisdatei gefunden.")
+            return
+
+        try:
+            with open(self.last_result_json, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            total = int(data.get("total", 0))
+            good = int(data.get("good", 0))
+            bad = int(data.get("bad", 0))
+            uncertain = int(data.get("uncertain", 0))
+
+            msg = (
+                f"Gesamt: {total}\n"
+                f"Gut: {good}\n"
+                f"Schlecht: {bad}\n"
+                f"Unklar: {uncertain}"
+            )
+            QMessageBox.information(self, "Zählung abgeschlossen", msg)
+
+        except Exception as e:
+            QMessageBox.warning(self, "Zählung", f"Fehler beim Lesen der Ergebnisse:\n{e}")
 
     def ask_exit_pin(self):
-        """Ask for PIN then exit to desktop if correct."""
         pin, ok = QInputDialog.getText(
             self,
             "Entwickler-Modus",
             "PIN eingeben:",
             QLineEdit.Password
         )
-
         if not ok:
             return
-
         if pin != DEV_PIN:
             QMessageBox.warning(self, "Zugriff verweigert", "Falsche PIN")
             return
 
+        # Stop inference if still running
         self.stop_inference_if_running()
         QApplication.quit()
 
     def stop_inference_if_running(self):
-        """Try to stop infer_4.py gracefully."""
         if not self.infer_process:
             return
 
@@ -463,6 +422,8 @@ class MainWindow(QWidget):
                     pass
 
         self.infer_process = None
+        self.start_btn.setText("START")
+        self.start_btn.setEnabled(True)
 
     def closeEvent(self, event):
         self.stop_inference_if_running()
