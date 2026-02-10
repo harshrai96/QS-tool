@@ -25,6 +25,8 @@ import torch
 import torch.nn as nn
 from torchvision import models, transforms
 from pypylon import pylon
+import argparse
+import json
 
 
 # -----------------------------
@@ -275,11 +277,19 @@ def score_frame(p_no, p_good, p_bad, blur_var):
     blur_score = clamp01(blur_var / 200.0)
     return prodness * class_conf * blur_score
 
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("--result-json", default="", help="Write final counts to this JSON file on exit")
+    return p.parse_args()
+
+
 
 # -----------------------------
 # Main
 # -----------------------------
 def main():
+    args = parse_args()
+    result_json_path = args.result_json
     global STOP_REQUESTED
     model, classes = load_model(MODEL_PATH)
     preprocess = make_preprocess()
@@ -520,6 +530,21 @@ def main():
             print(f"Saved best frames to: {SAVE_DIR.resolve()}")
         print("================================================\n")
 
+        # ---- Write final results for Qt launcher ----
+        if result_json_path:
+            try:
+                payload = {
+                    "total": int(seen_products),
+                    "good": int(good_count),
+                    "bad": int(bad_count),
+                    "uncertain": int(uncertain_count),
+                }
+                with open(result_json_path, "w", encoding="utf-8") as f:
+                    json.dump(payload, f, ensure_ascii=False, indent=2)
+            except Exception as e:
+                print(f"[WARN] Could not write result JSON: {e}")
+
+
         try:
             if camera and camera.IsGrabbing():
                 camera.StopGrabbing()
@@ -532,3 +557,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
